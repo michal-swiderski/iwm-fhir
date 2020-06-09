@@ -20,8 +20,30 @@ export default {
         },
 
         async fhir_getPatient(id) {
-            const {data} = await axios.get(`${URL}/Patient/${id}/$everything`);
-            return data
+            const {data} = await axios.get(`${URL}/Patient/${id}`);
+            return data;
+        },
+
+
+        async fhir_getPatientResource(patientId, resourceName) {
+            let result = [];
+            let nextLink = `${URL}/${resourceName}?patient=${patientId}&_count=100`;
+            do {
+                const {data} = await axios.get(nextLink);
+                if(data.entry)
+                    result = result.concat(data.entry)
+                if(data.link && data.link.find(l => l.relation === 'next')){
+                    nextLink = data.link.find(l => l.relation === 'next').url;
+                }
+                else {
+                    nextLink = null;
+                }
+            } while(nextLink)
+            return result;
+        },
+
+        fhir_getResourceDate(resource) {
+            return resource.resource.resourceType === 'Observation' ? resource.resource.effectiveDateTime : resource.resource.authoredOn;
         }
     }
 }
